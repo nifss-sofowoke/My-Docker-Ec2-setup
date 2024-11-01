@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: This template launches an Ubuntu t2-micro EC2 instance that allows all traffic from your IP address and installs Docker-- for setting up your Docker env
+
+Parameters:
+ MyIPAddress:
+    Type: String
+    Description: Your IP address for you to connect to the EC2 instance
+
+Resources:
+  DockerInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for SSH and Docker
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref MyIPAddress
+        - IpProtocol: -1
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: !Ref MyIPAddress
+
+  DockerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-04b70fa74e45c3917  
+      InstanceType: t2.micro
+      KeyName: <existing key pair name>
+      SecurityGroupIds:
+        - !GetAtt DockerInstanceSG.GroupId
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          curl -fsSL https://get.docker.com -o get-docker.sh 
+          sh get-docker.sh
